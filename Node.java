@@ -5,8 +5,8 @@ import java.sql.Timestamp;
 public class Node<T> {
 	T value;
 	volatile Node<T> next;
-	Timestamp enterTime;
-	Timestamp exitTime;
+	long enterTime;
+	long exitTime;
 	
 	public Node(T value) {
 		this.value = value;

@@ -1,6 +1,5 @@
 package q1;
 
-
 import java.sql.Timestamp;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -20,26 +19,26 @@ public class BlockingUnboundedQueue<T> {
 		enqLock.lock();
 		try {
 			Node<T> e = new Node<T>(x);
-			e.enterTime = new Timestamp(System.currentTimeMillis());
+			e.enterTime = System.currentTimeMillis();
 			tail.next = e;
 			tail = e;
-			//System.out.println("adding: " + x);
+			//System.out.println("enq " + x);
 		}finally {
 			enqLock.unlock();
 		}
 	}
 	
-	public Timestamp deq() throws Exception{
-		Timestamp result = null;
+	public Node<T> deq() throws Exception{
+		Node<T> result;
 		deqLock.lock();
 		try {
 			if(head.next == null) {
 				throw new Exception();
 			}
-			head.next.exitTime = new Timestamp(System.currentTimeMillis());
-			result = head.next.enterTime;
+			head.next.exitTime = System.currentTimeMillis();
+			result = head.next;
 			head = head.next;
-			if(result != null)System.out.println(result.toString());
+			//if(result != null)System.out.println("" + result.enterTime);
 			
 		}finally {
 

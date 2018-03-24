@@ -1,6 +1,7 @@
 package q1;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean; 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
@@ -12,6 +13,8 @@ public class Main {
 	static AtomicInteger uniqueId;
 	static AtomicBoolean continueOps;
 	static AtomicInteger deqCounter;
+
+	static ArrayList<Node> deqListOfNodes;
 
 	static BlockingUnboundedQueue<Integer> blockingUnboundedQueue;
 	//static LockFreeUnboundedQueue<Integer> lockFreeUnboundedQueue;
@@ -31,6 +34,8 @@ public class Main {
 			continueOps = new AtomicBoolean(true);
 			deqCounter = new AtomicInteger(0);
 			blockingUnboundedQueue = new BlockingUnboundedQueue<>();
+
+			deqListOfNodes = new ArrayList<>();
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -55,20 +60,20 @@ public class Main {
 		};
 
 		Runnable deqItemsRunnable = new Runnable() {
-			
+
 			@Override
 			public void run() {
 
 				int counter = 0;
 				boolean continueDeq = true;
-				
+
 				while(continueDeq) {
 					try {
 						//System.out.println("" + blockingUnboundedQueue.deq().toString());
-						blockingUnboundedQueue.deq();
+						deqListOfNodes.add(blockingUnboundedQueue.deq());
 						if(++counter == 100) {
 							continueDeq = false;
-							System.out.println(" the counter is: " + counter);
+							//System.out.println(" the counter is: " + counter);
 						}
 						try {
 							Thread.sleep(10);
@@ -78,8 +83,7 @@ public class Main {
 						}
 
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						//System.out.println("starved");
 					}
 				}
 
@@ -118,6 +122,31 @@ public class Main {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		
+		
+		ArrayList<Node> enqListOfNodes = deqListOfNodes;
+		
+		//first we sort two arrays of the same nodes, one of them sorted by enter time and the other by exit time
+		enqListOfNodes.sort((o1, o2) -> Long.compare(o1.enterTime, o2.enterTime));
+		deqListOfNodes.sort((o1, o2) -> Long.compare(o1.exitTime, o2.exitTime));
+		int counter = 0;
+		boolean next = true;
+		
+		//we iterate throug the enq list comparing to the deq list and incrementing the index of the deq list so we only traverse each list once.
+		for (Node node : enqListOfNodes) {
+			while(next) {
+				if(node.enterTime <= deqListOfNodes.get(counter).exitTime) {
+					System.out.println("enq " + node.value + " " + node.enterTime);
+					next = false;
+				}else {
+					next = true;
+					System.out.println("deq " + deqListOfNodes.get(counter).value + " " + deqListOfNodes.get(counter).exitTime);
+					counter++;
+				}
+			}
+			next = true;
+			//System.out.println("" + node.exitTime);
 		}
 
 
