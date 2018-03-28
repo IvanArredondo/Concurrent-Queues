@@ -1,6 +1,7 @@
 package q1;
 
 import java.sql.Timestamp;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class LockFreeUnboundedQueue<T>{
@@ -9,18 +10,19 @@ public class LockFreeUnboundedQueue<T>{
 	AtomicReference<NodeLockFree<T>> tail;
 
 	public LockFreeUnboundedQueue(){
-		head = new AtomicReference<NodeLockFree<T>>(null);
-		tail = head;
+		NodeLockFree<T> sentinel = new NodeLockFree<T>(null);
+		head = new AtomicReference<NodeLockFree<T>>(sentinel);
+		tail = new AtomicReference<NodeLockFree<T>>(sentinel);
 	}
 
-	public void enq(T value) {
+	public void enq(T value){
 		NodeLockFree<T> node = new NodeLockFree<T>(value);
 		while(true) {
 			NodeLockFree<T> last = tail.get();
 			NodeLockFree<T> next = last.next.get();
 			if(last == tail.get()) {
 				if(next == null) {
-					node.enterTime = new Timestamp(System.currentTimeMillis());
+					node.enterTime = System.currentTimeMillis();
 					if(last.next.compareAndSet(next, node)) {
 						tail.compareAndSet(last, node);
 						return;
@@ -32,7 +34,7 @@ public class LockFreeUnboundedQueue<T>{
 		}
 	}
 
-	public T deq() throws Exception{
+	public NodeLockFree<T> deq() throws Exception{
 		while(true) {
 			NodeLockFree<T> first = head.get();
 			NodeLockFree<T> last = tail.get();
@@ -44,10 +46,10 @@ public class LockFreeUnboundedQueue<T>{
 					}
 					tail.compareAndSet(last, next);
 				} else {
-					T value = next.value;
-					next.exitTime = new Timestamp(System.currentTimeMillis());
+					//T value = next.value;	//changed method to return node instead
+					next.exitTime = System.currentTimeMillis();
 					if(head.compareAndSet(first, next)) {	//its weird that we're updating the head with the node which we're supposedly dequeing since we're getting its value in the pervious line
-						return value;
+						return next;
 					}
 				}
 			}
